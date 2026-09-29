@@ -7,33 +7,32 @@
 import { Platform } from "react-native";
 import { tokenStorage } from "../services/tokenStorage";
 
-export const getBaseUrl = () => {
-  let url = process.env.EXPO_PUBLIC_API_URL;
+// ── Production backend (Render) ─────────────────────────────
+// This is the canonical production URL. EXPO_PUBLIC_API_URL in .env
+// can override this for local development only.
+const PRODUCTION_API_URL = "https://lifehandles-3.onrender.com/api";
 
-  // Production or configured URL
-  if (url && url.trim().length > 0) {
-    url = url.trim().replace(/\/+$/, "");
-    // If in web testing with a 10.0.2.2 placeholder, translate to hostname
-    if (Platform.OS === "web" && url.includes("10.0.2.2")) {
+export const getBaseUrl = () => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL?.trim().replace(/\/+$/, "");
+
+  // Use env var only if it's explicitly set to a local dev URL;
+  // otherwise always fall back to production.
+  if (envUrl && envUrl.length > 0 && !envUrl.includes("onrender.com")) {
+    // Local dev override (e.g. http://10.0.2.2:3000/api or http://localhost:3000/api)
+    if (Platform.OS === "web" && envUrl.includes("10.0.2.2")) {
       const hostname =
         typeof window !== "undefined" && window.location?.hostname
           ? window.location.hostname
           : "localhost";
-      url = url.replace("10.0.2.2", hostname);
+      return envUrl.replace("10.0.2.2", hostname);
     }
-    return url;
+    return envUrl;
   }
 
-  // Local development fallback only
-  if (typeof __DEV__ !== "undefined" && __DEV__) {
-    if (Platform.OS === "web") return "http://localhost:3000/api";
-    return "http://10.0.2.2:3000/api";
-  }
-
-  throw new Error(
-    "Missing EXPO_PUBLIC_API_URL. Please set your production API URL in your environment."
-  );
+  // Default: always use production backend
+  return PRODUCTION_API_URL;
 };
+
 
 export const getApiBase = () => {
   return getBaseUrl().replace("/api", "");
