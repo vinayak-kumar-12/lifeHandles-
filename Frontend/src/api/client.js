@@ -39,7 +39,8 @@ export const getApiBase = () => {
   return getBaseUrl().replace("/api", "");
 };
 
-const DEFAULT_TIMEOUT_MS = 20000;
+// Render free tier can take up to ~30s to cold-start — use a generous timeout.
+const DEFAULT_TIMEOUT_MS = 30000;
 
 let _tokenRefreshCallback = null;
 
@@ -67,9 +68,11 @@ async function fetchWithTimeout(url, options, timeoutMs = DEFAULT_TIMEOUT_MS) {
   } catch (err) {
     clearTimeout(id);
     if (err.name === "AbortError") {
-      throw new Error("Request timed out. Please check your network connection and try again.");
+      throw new Error(
+        "Request timed out. The server may be starting up — please wait a moment and try again."
+      );
     }
-    throw new Error("Unable to connect to the server. Please check your network connection.");
+    throw new Error("Unable to connect to the server. Please check your internet connection.");
   }
 }
 
